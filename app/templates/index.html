@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LSTM股票预测系统</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 简洁CSS样式 */
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #F5F5F5; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+        }
+        .input-group { 
+            margin: 20px 0; 
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .input-group input {
+            padding: 10px;
+            width: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .input-group button {
+            padding: 10px 20px;
+            background: #1f77b4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .chart-container {
+            margin: 30px 0;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 页面标题 -->
+        <div class="header">
+            <h1>LSTM股票预测系统</h1>
+            <p>基于历史数据的股票价格预测</p>
+        </div>
+
+        <!-- 输入区域（可选：用于选择股票/日期） -->
+        <div class="input-group">
+            <input type="text" id="stockSymbol" placeholder="股票代码（如AAPL）" value="AAPL">
+            <button onclick="loadPrediction()">获取预测</button>
+        </div>
+
+        <!-- 图表容器：展示历史数据+预测结果 -->
+        <div class="chart-container">
+            <canvas id="stockChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // 初始化Chart.js图表
+        const ctx = document.getElementById('stockChart').getContext('2d');
+        const stockChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [], // 日期标签（后续从后端获取）
+                datasets: [
+                    {
+                        label: '历史收盘价',
+                        data: [],
+                        borderColor: '#1f77b4',
+                        borderWidth: 1,
+                        fill: false
+                    },
+                    {
+                        label: '预测收盘价',
+                        data: [],
+                        borderColor: '#ff7f0e',
+                        borderWidth: 2,
+                        borderDash: [5, 5], // 虚线样式
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: '日期' } },
+                    y: { title: { display: true, text: '价格' } }
+                }
+            }
+        });
+
+        // 模拟加载预测数据（后续需替换为后端接口请求）
+        function loadPrediction() {
+            // 示例：填充模拟数据（实际项目中从后端API获取）
+            const dates = ['2025-11-01', '2025-11-02', '2025-11-03', '2025-11-04', '2025-11-05', '2025-11-06', '2025-11-07'];
+            const historyData = [450, 452, 448, 455, 453, 456];
+            const predictData = [456, 458, 455]; // 预测后3天的数据
+
+            // 更新图表数据
+            stockChart.data.labels = dates;
+            stockChart.data.datasets[0].data = historyData;
+            stockChart.data.datasets[1].data = [null, null, null, null, 456, 458, 455]; // 对齐日期
+            stockChart.update();
+        }
+
+        // 页面加载时默认加载数据
+        window.onload = loadPrediction;
+    </script>
+</body>
+</html>
