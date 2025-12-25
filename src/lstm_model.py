@@ -1,4 +1,3 @@
-# src/lstm_model.py
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -15,7 +14,7 @@ import os
 from datetime import datetime
 
 class LSTMModel:
-    """LSTM股票预测模型"""
+    """LSTM Model for Stock Price Time Series Prediction"""
     
     def __init__(self, input_shape, model_path='models/lstm_model.keras'):
         self.input_shape = input_shape
@@ -24,11 +23,20 @@ class LSTMModel:
         self.history = None
         
     def build_model(self, lstm_units=[50, 50], dropout_rate=0.2, learning_rate=0.001):
-        """构建LSTM模型架构"""
-        print("🏗️ 构建LSTM模型...")
+        """Builds LSTM model architecture for time series prediction
+        
+        Parameters:
+            lstm_units (list): Number of units in each LSTM layer (default: [50, 50])
+            dropout_rate (float): Dropout rate for regularization (default: 0.2)
+            learning_rate (float): Learning rate for Adam optimizer (default: 0.001)
+            
+        Returns:
+            tf.keras.Model: Compiled LSTM model
+        """
+        print("Building LSTM model...")
         
         model = Sequential([
-            # 第一层LSTM
+            # First LSTM layer (returns sequences for stacked LSTM)
             LSTM(
                 units=lstm_units[0],
                 return_sequences=True,
@@ -39,7 +47,7 @@ class LSTMModel:
             BatchNormalization(),
             Dropout(dropout_rate),
             
-            # 第二层LSTM
+            # Second LSTM layer (no sequence return for final output)
             LSTM(
                 units=lstm_units[1],
                 return_sequences=False,
@@ -49,12 +57,12 @@ class LSTMModel:
             BatchNormalization(),
             Dropout(dropout_rate),
             
-            # 全连接层
+            # Fully connected layer
             Dense(25, activation='relu', kernel_initializer='he_normal'),
-            Dense(1, kernel_initializer='glorot_uniform')  # 输出层
+            Dense(1, kernel_initializer='glorot_uniform')  # Output layer (price prediction)
         ])
         
-        # 编译模型
+        # Compile model with Adam optimizer
         optimizer = Adam(
             learning_rate=learning_rate,
             beta_1=0.9,
@@ -64,8 +72,8 @@ class LSTMModel:
         
         model.compile(
             optimizer=optimizer,
-            loss='mse',  # 均方误差
-            metrics=['mae', 'mse']  # 平均绝对误差和均方误差
+            loss='mse',  # Mean Squared Error (regression task)
+            metrics=['mae', 'mse']  # Mean Absolute Error, Mean Squared Error
         )
         
         self.model = model
@@ -74,29 +82,41 @@ class LSTMModel:
         return model
     
     def _print_model_summary(self):
-        """打印模型摘要"""
+        """Prints detailed model architecture and parameter count"""
         print("=" * 60)
-        print("📊 模型架构摘要")
+        print("Model Architecture Summary")
         print("=" * 60)
         self.model.summary()
         
-        # 计算总参数
+        # Calculate total parameters
         trainable_params = np.sum([tf.keras.backend.count_params(w) for w in self.model.trainable_weights])
         non_trainable_params = np.sum([tf.keras.backend.count_params(w) for w in self.model.non_trainable_weights])
         
-        print(f"可训练参数: {trainable_params:,}")
-        print(f"不可训练参数: {non_trainable_params:,}")
-        print(f"总参数: {trainable_params + non_trainable_params:,}")
+        print(f"Trainable Parameters: {trainable_params:,}")
+        print(f"Non-trainable Parameters: {non_trainable_params:,}")
+        print(f"Total Parameters: {trainable_params + non_trainable_params:,}")
         print("=" * 60)
     
     def train(self, X_train, y_train, X_val, y_val, epochs=50, batch_size=32):
-        """训练模型"""
-        print("🚀 开始训练模型...")
+        """Trains LSTM model with validation and regularization callbacks
         
-        # 创建日志目录
+        Parameters:
+            X_train (np.array): Training input data (shape: [samples, timesteps, features])
+            y_train (np.array): Training target values (stock prices)
+            X_val (np.array): Validation input data
+            y_val (np.array): Validation target values
+            epochs (int): Number of training epochs (default: 50)
+            batch_size (int): Batch size for training (default: 32)
+            
+        Returns:
+            tf.keras.callbacks.History: Training history object
+        """
+        print("Starting model training...")
+        
+        # Create log directory for TensorBoard
         log_dir = f"logs/fit/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
-        # 定义回调函数
+        # Define training callbacks (regularization/early stopping)
         callbacks = [
             EarlyStopping(
                 monitor='val_loss',
@@ -120,7 +140,7 @@ class LSTMModel:
             TensorBoard(log_dir=log_dir, histogram_freq=1)
         ]
         
-        # 训练模型
+        # Train model
         self.history = self.model.fit(
             X_train, y_train,
             validation_data=(X_val, y_val),
@@ -130,45 +150,64 @@ class LSTMModel:
             verbose=1
         )
         
-        print(f"✅ 训练完成!")
-        print(f"📁 最佳模型已保存到: {self.model_path}")
+        print(f"Training completed!")
+        print(f"Best model saved to: {self.model_path}")
         
         return self.history
     
     def evaluate(self, X_test, y_test):
-        """评估模型性能"""
+        """Evaluates model performance on test dataset
+        
+        Parameters:
+            X_test (np.array): Test input data
+            y_test (np.array): Test target values
+            
+        Returns:
+            list: Evaluation metrics [loss, mae, mse]
+        """
         if self.model is None:
             self.load_model()
         
-        print("📈 评估模型性能...")
+        print("Evaluating model performance...")
         
-        # 计算评估指标
+        # Calculate evaluation metrics
         evaluation = self.model.evaluate(X_test, y_test, verbose=0)
         
-        # 打印结果
+        # Print results
         print("=" * 60)
-        print("📊 模型评估结果")
+        print("Model Evaluation Results")
         print("=" * 60)
-        print(f"测试损失 (MSE): {evaluation[1]:.6f}")
-        print(f"测试MAE: {evaluation[2]:.6f}")
+        print(f"Test Loss (MSE): {evaluation[1]:.6f}")
+        print(f"Test MAE: {evaluation[2]:.6f}")
         print("=" * 60)
         
         return evaluation
     
     def predict(self, X):
-        """进行预测"""
+        """Generates predictions for input time series data
+        
+        Parameters:
+            X (np.array): Input data (shape: [samples, timesteps, features])
+            
+        Returns:
+            np.array: Predicted stock prices
+        """
         if self.model is None:
             self.load_model()
         
         return self.model.predict(X, verbose=0)
     
     def save_model(self):
-        """保存模型"""
+        """Saves trained model to specified path"""
         self.model.save(self.model_path)
-        print(f"✅ 模型已保存到: {self.model_path}")
+        print(f"Model saved to: {self.model_path}")
     
     def load_model(self):
-        """加载模型"""
+        """Loads pre-trained model from specified path
+        
+        Returns:
+            tf.keras.Model: Loaded LSTM model
+        """
         self.model = tf.keras.models.load_model(self.model_path)
-        print(f"✅ 模型已从 {self.model_path} 加载")
+        print(f"Model loaded from {self.model_path}")
         return self.model

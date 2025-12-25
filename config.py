@@ -1,41 +1,41 @@
 import sys
 import os
 
-# 直接指定项目根目录（根据你的实际路径修改，比如项目在桌面）
+# Specify project root directory (modify to your actual path)
 project_root = r"C:\Users\86136\Desktop\stock_prediction_lstm"
 sys.path.append(project_root)
 
-# 重新验证
-print(f"✅ 项目根目录：{project_root}")
-print(f"✅ config.py是否存在：{os.path.exists(os.path.join(project_root, 'config.py'))}")
-print(f"✅ src/data_generator.py是否存在：{os.path.exists(os.path.join(project_root, 'src', 'data_generator.py'))}")# config.py
+# Validate file existence
+print(f"Project Root Directory: {project_root}")
+print(f"config.py Exists: {os.path.exists(os.path.join(project_root, 'config.py'))}")
+print(f"src/data_generator.py Exists: {os.path.exists(os.path.join(project_root, 'src', 'data_generator.py'))}")
 class Config:
-    """项目配置"""
+    """Configuration for LSTM Stock Price Prediction Project"""
     
-    # 数据生成参数
-    STOCK_SYMBOL = "AAPL"  # 模拟苹果股票
+    # Data Generation Params
+    STOCK_SYMBOL = "AAPL"  # Apple stock (simulated)
     START_DATE = "2020-01-01"
     END_DATE = "2025-12-01"
-    INITIAL_PRICE = 100.0  # 初始价格
-    TREND_SLOPE = 0.1      # 每日上涨趋势
-    VOLATILITY = 2.0       # 波动率
+    INITIAL_PRICE = 100.0  # Initial stock price
+    TREND_SLOPE = 0.1      # Daily upward trend
+    VOLATILITY = 2.0       # Price volatility
     
-    # 模型参数
-    LOOKBACK_DAYS = 60     # 用过去60天的数据预测下一天
-    TRAIN_SPLIT = 0.8      # 80%训练，20%测试
-    FEATURES = ['Close']   # 使用的特征
+    # Model Params
+    LOOKBACK_DAYS = 60     # Predict next day with 60-day history
+    TRAIN_SPLIT = 0.8      # 80% train / 20% test
+    FEATURES = ['Close']   # Features for prediction
     
-    # 模型训练参数
+    # Training Params
     BATCH_SIZE = 32
     EPOCHS = 50
     LEARNING_RATE = 0.001
     DROPOUT_RATE = 0.2
     
-    # 路径配置
+    # Path Config
     DATA_PATH = "data/stock_data.csv"
     MODEL_PATH = r"C:\Users\86136\Desktop\stock_prediction_lstm\models\lstm_model.keras"
     SCALER_PATH = r"C:\Users\86136\Desktop\stock_prediction_lstm\models\scaler.pkl"
     
-    # Web应用配置
+    # Web App Config
     HOST = "localhost"
     PORT = 5000

@@ -1,6 +1,5 @@
-# main.py
 """
-主训练脚本 - 股票价格预测系统
+Main Training Script - Stock Price Prediction System
 """
 
 import sys
@@ -8,12 +7,12 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
-# 设置随机种子保证可复现性
+# Set random seed for reproducibility
 SEED = 42
 np.random.seed(SEED)
 tf.random.set_seed(SEED)
 
-# 添加项目根目录到路径
+# Add project root directory to path
 sys.path.append('.')
 
 from config import Config
@@ -23,38 +22,38 @@ from src.lstm_model import LSTMModel
 from src.visualization import StockVisualizer
 
 def setup_environment():
-    """设置运行环境"""
+    """Set up runtime environment"""
     print("=" * 60)
-    print("📈 股票价格预测系统 - LSTM模型训练")
+    print("Stock Price Prediction System - LSTM Model Training")
     print("=" * 60)
     
-    # 检查TensorFlow版本
-    print(f"TensorFlow版本: {tf.__version__}")
-    print(f"NumPy版本: {np.__version__}")
+    # Check TensorFlow version
+    print(f"TensorFlow Version: {tf.__version__}")
+    print(f"NumPy Version: {np.__version__}")
     
-    # 检查GPU是否可用
+    # Check GPU availability
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
-        print(f"✅ GPU可用: {[gpu.name for gpu in gpus]}")
+        print(f"GPU Available: {[gpu.name for gpu in gpus]}")
     else:
-        print("⚠️  GPU不可用，使用CPU")
+        print("GPU Not Available, Using CPU")
 
 def generate_or_load_data():
-    """生成或加载数据"""
+    """Generate or load dataset"""
     print("\n" + "=" * 60)
-    print("📊 数据准备阶段")
+    print("Data Preparation Phase")
     print("=" * 60)
     
     try:
-        # 尝试加载已有数据
+        # Try to load existing data
         import pandas as pd
         data = pd.read_csv(Config.DATA_PATH)
-        print(f"✅ 从 {Config.DATA_PATH} 加载已有数据")
-        print(f"   数据形状: {data.shape}")
+        print(f"Loaded existing data from {Config.DATA_PATH}")
+        print(f"   Data Shape: {data.shape}")
         
     except FileNotFoundError:
-        # 生成新数据
-        print("📁 未找到数据文件，生成新的模拟数据...")
+        # Generate new data
+        print("Data file not found, generating new simulated data...")
         
         generator = StockDataGenerator(
             initial_price=Config.INITIAL_PRICE,
@@ -62,63 +61,63 @@ def generate_or_load_data():
             volatility=Config.VOLATILITY
         )
         
-        # 生成基本数据
+        # Generate base data
         data = generator.generate_stock_data(
             start_date=Config.START_DATE,
             end_date=Config.END_DATE,
             symbol=Config.STOCK_SYMBOL
         )
         
-        # 添加技术指标
+        # Add technical indicators
         data = generator.add_technical_indicators(data)
         
-        # 保存数据
+        # Save data
         generator.save_to_csv(data, Config.DATA_PATH)
     
     return data
 
 def prepare_data():
-    """准备训练和测试数据"""
+    """Prepare training and testing data"""
     print("\n" + "=" * 60)
-    print("🔧 数据预处理")
+    print("Data Preprocessing")
     print("=" * 60)
     
-    # 初始化预处理器
+    # Initialize preprocessor
     preprocessor = StockPreprocessor(
         lookback_days=Config.LOOKBACK_DAYS,
         feature_columns=Config.FEATURES
     )
     
-    # 加载并准备数据
+    # Load and prepare data
     X_train, y_train, X_test, y_test, original_df = preprocessor.load_and_prepare_data(
         Config.DATA_PATH,
         train_split=Config.TRAIN_SPLIT
     )
     
-    # 进一步分割训练集为训练和验证集
+    # Further split training set into train and validation sets
     X_train, X_val, y_train, y_val = train_test_split(
         X_train, y_train, 
         test_size=0.1, 
         random_state=SEED
     )
     
-    print(f"\n📁 数据集分割结果:")
-    print(f"   训练集: {X_train.shape} (用于训练)")
-    print(f"   验证集: {X_val.shape} (用于验证)")
-    print(f"   测试集: {X_test.shape} (用于最终测试)")
+    print(f"\nDataset Split Results:")
+    print(f"   Training Set: {X_train.shape} (for model training)")
+    print(f"   Validation Set: {X_val.shape} (for model validation)")
+    print(f"   Test Set: {X_test.shape} (for final testing)")
     
-    # 保存scaler
+    # Save scaler
     preprocessor.save_scaler(Config.SCALER_PATH)
     
     return X_train, y_train, X_val, y_val, X_test, y_test, preprocessor, original_df
 
 def build_and_train_model(X_train, y_train, X_val, y_val):
-    """构建和训练模型"""
+    """Build and train LSTM model"""
     print("\n" + "=" * 60)
-    print("🧠 模型构建与训练")
+    print("Model Construction & Training")
     print("=" * 60)
     
-    # 构建模型
+    # Build model
     input_shape = (X_train.shape[1], X_train.shape[2])
     lstm_model = LSTMModel(input_shape, Config.MODEL_PATH)
     
@@ -128,7 +127,7 @@ def build_and_train_model(X_train, y_train, X_val, y_val):
         learning_rate=Config.LEARNING_RATE
     )
     
-    # 训练模型
+    # Train model
     history = lstm_model.train(
         X_train, y_train,
         X_val, y_val,
@@ -139,18 +138,18 @@ def build_and_train_model(X_train, y_train, X_val, y_val):
     return lstm_model, history
 
 def evaluate_model(lstm_model, X_test, y_test, preprocessor):
-    """评估模型性能"""
+    """Evaluate model performance"""
     print("\n" + "=" * 60)
-    print("📈 模型评估")
+    print("Model Evaluation")
     print("=" * 60)
     
-    # 评估模型
+    # Evaluate model
     evaluation = lstm_model.evaluate(X_test, y_test)
     
-    # 进行预测
+    # Make predictions
     predictions_scaled = lstm_model.predict(X_test)
     
-    # 反标准化
+    # Inverse transform to original scale
     predictions = preprocessor.inverse_transform(
         predictions_scaled.reshape(-1, 1)
     ).flatten()
@@ -162,26 +161,26 @@ def evaluate_model(lstm_model, X_test, y_test, preprocessor):
     return predictions, y_test_actual, evaluation
 
 def visualize_results(history, y_true, y_pred, original_df):
-    """可视化结果"""
+    """Visualize prediction results"""
     print("\n" + "=" * 60)
-    print("🎨 结果可视化")
+    print("Result Visualization")
     print("=" * 60)
     
     visualizer = StockVisualizer()
     
-    # 1. 绘制训练历史
+    # 1. Plot training history
     visualizer.plot_training_history(
         history, 
         save_path="static/images/training_history.png"
     )
     
-    # 2. 绘制预测结果
+    # 2. Plot prediction results
     metrics = visualizer.plot_predictions(
         y_true, y_pred,
         save_path="static/images/predictions.png"
     )
     
-    # 3. 绘制特征相关性
+    # 3. Plot feature correlation
     visualizer.plot_feature_correlation(
         original_df.select_dtypes(include=[np.number]),
         save_path="static/images/correlation_heatmap.png"
@@ -190,48 +189,48 @@ def visualize_results(history, y_true, y_pred, original_df):
     return metrics
 
 def main():
-    """主函数"""
+    """Main function"""
     try:
-        # 1. 环境设置
+        # 1. Environment setup
         setup_environment()
         
-        # 2. 数据准备
+        # 2. Data preparation
         data = generate_or_load_data()
         
-        # 3. 数据预处理
+        # 3. Data preprocessing
         (X_train, y_train, X_val, y_val, 
          X_test, y_test, preprocessor, original_df) = prepare_data()
         
-        # 4. 构建和训练模型
+        # 4. Model construction and training
         lstm_model, history = build_and_train_model(X_train, y_train, X_val, y_val)
         
-        # 5. 评估模型
+        # 5. Model evaluation
         predictions, y_true, evaluation = evaluate_model(
             lstm_model, X_test, y_test, preprocessor
         )
         
-        # 6. 可视化结果
+        # 6. Result visualization
         metrics = visualize_results(history, y_true, predictions, original_df)
         
-        # 7. 输出最终结果
+        # 7. Output final results
         print("\n" + "=" * 60)
-        print("🎉 项目完成!")
+        print("Project Completed!")
         print("=" * 60)
-        print(f"\n📁 生成的文件:")
-        print(f"   数据文件: {Config.DATA_PATH}")
-        print(f"   模型文件: {Config.MODEL_PATH}")
-        print(f"   Scaler文件: {Config.SCALER_PATH}")
-        print(f"   可视化图表: static/images/")
+        print(f"\nGenerated Files:")
+        print(f"   Data File: {Config.DATA_PATH}")
+        print(f"   Model File: {Config.MODEL_PATH}")
+        print(f"   Scaler File: {Config.SCALER_PATH}")
+        print(f"   Visualization Plots: static/images/")
         
-        print(f"\n📊 最终模型性能:")
+        print(f"\nFinal Model Performance:")
         for metric, value in metrics.items():
             print(f"   {metric.upper()}: {value:.4f}")
         
-        print("\n✅ 项目运行成功！可以启动Web应用查看交互界面。")
-        print("   运行命令: cd app && python app.py")
+        print("\nProject ran successfully! You can start the web application to view the interactive interface.")
+        print("   Run Command: cd app && python app.py")
         
     except Exception as e:
-        print(f"\n❌ 运行出错: {str(e)}")
+        print(f"\nRuntime Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return 1

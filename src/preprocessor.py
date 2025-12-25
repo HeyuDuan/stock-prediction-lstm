@@ -1,4 +1,3 @@
-# src/preprocessor.py
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
@@ -7,7 +6,7 @@ import pickle
 import os
 
 class StockPreprocessor:
-    """股票数据预处理器"""
+    """Preprocessor for Stock Price Time Series Data (LSTM Input Preparation)"""
     
     def __init__(self, lookback_days=60, feature_columns=['Close']):
         self.lookback_days = lookback_days
@@ -16,61 +15,99 @@ class StockPreprocessor:
         
     def load_and_prepare_data(self, data_path, train_split=0.8):
         """
-        加载并准备数据
-        返回: X_train, y_train, X_test, y_test, original_df
+        Loads, preprocesses and splits stock data for LSTM training
+        
+        Parameters:
+            data_path (str): Path to CSV file containing stock data
+            train_split (float): Ratio of training data (default: 0.8)
+            
+        Returns:
+            tuple: (X_train, y_train, X_test, y_test, original_df)
+            - X_train: Training input sequences (shape: [samples, lookback_days, features])
+            - y_train: Training target values (closing prices)
+            - X_test: Test input sequences
+            - y_test: Test target values
+            - original_df: Original unprocessed DataFrame (for visualization/analysis)
         """
-        print("📥 加载数据...")
+        print("Loading data...")
         df = pd.read_csv(data_path, parse_dates=['Date'])
         
-        # 确保数据按日期排序
+        # Ensure data is sorted by date
         df = df.sort_values('Date')
         
-        # 提取特征
+        # Extract feature columns
         feature_data = df[self.feature_columns].values
         
-        # 标准化数据
-        print("🔄 标准化数据...")
+        # Normalize data to [0,1] range
+        print("Normalizing data...")
         scaled_data = self.scaler.fit_transform(feature_data)
         
-        # 创建时间序列序列
-        print("🔧 创建时间序列序列...")
+        # Create time series sequences for LSTM input
+        print("Creating time series sequences...")
         X, y = self._create_sequences(scaled_data)
         
-        # 分割数据集
+        # Split dataset into train/test sets
         split_idx = int(len(X) * train_split)
         X_train, y_train = X[:split_idx], y[:split_idx]
         X_test, y_test = X[split_idx:], y[split_idx:]
         
-        print(f"✅ 数据准备完成!")
-        print(f"  训练集: X={X_train.shape}, y={y_train.shape}")
-        print(f"  测试集: X={X_test.shape}, y={y_test.shape}")
+        print(f"Data preparation completed!")
+        print(f"  Training set: X={X_train.shape}, y={y_train.shape}")
+        print(f"  Test set: X={X_test.shape}, y={y_test.shape}")
         
         return X_train, y_train, X_test, y_test, df
     
     def _create_sequences(self, data):
-        """创建LSTM输入序列"""
+        """Creates input/output sequences for LSTM time series prediction
+        
+        Parameters:
+            data (np.array): Normalized feature data (shape: [timesteps, features])
+            
+        Returns:
+            tuple: (X, y) where:
+            - X: Input sequences (shape: [samples, lookback_days, features])
+            - y: Target values (next time step closing price)
+        """
         X, y = [], []
         
         for i in range(self.lookback_days, len(data)):
             X.append(data[i-self.lookback_days:i])
-            y.append(data[i, 0])  # 预测下一个时间步的收盘价
+            y.append(data[i, 0])  # Predict closing price for next time step
         
         return np.array(X), np.array(y)
     
     def save_scaler(self, filepath):
-        """保存scaler"""
+        """Saves MinMaxScaler to pickle file for future inverse transformation
+        
+        Parameters:
+            filepath (str): Path to save the scaler object
+        """
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, 'wb') as f:
             pickle.dump(self.scaler, f)
-        print(f"✅ Scaler已保存到: {filepath}")
+        print(f"Scaler saved to: {filepath}")
     
     def load_scaler(self, filepath):
-        """加载scaler"""
+        """Loads pre-saved MinMaxScaler from pickle file
+        
+        Parameters:
+            filepath (str): Path to the scaler pickle file
+            
+        Returns:
+            MinMaxScaler: Loaded scaler object
+        """
         with open(filepath, 'rb') as f:
             self.scaler = pickle.load(f)
-        print(f"✅ Scaler已从 {filepath} 加载")
+        print(f"Scaler loaded from {filepath}")
         return self.scaler
     
     def inverse_transform(self, scaled_data):
-        """将标准化数据转换回原始范围"""
+        """Inverse transforms normalized data back to original price range
+        
+        Parameters:
+            scaled_data (np.array): Normalized data (range [0,1])
+            
+        Returns:
+            np.array: Data in original price range
+        """
         return self.scaler.inverse_transform(scaled_data)

@@ -1,10 +1,9 @@
-# verify.py
 import sys
 import os
 
-print("🔍 验证项目环境...")
+print("Verifying project environment...")
 
-# 检查关键文件
+# Check critical project files
 required_files = [
     'requirements.txt',
     'config.py',
@@ -15,21 +14,21 @@ required_files = [
     'app/app.py'
 ]
 
-print("1. 检查项目结构...")
+print("1. Checking project structure...")
 for file in required_files:
     if os.path.exists(file):
-        print(f"   ✅ {file}")
+        print(f"   {file} - OK")
     else:
-        print(f"   ❌ {file} 不存在")
+        print(f"   {file} - NOT FOUND")
 
-# 检查Python包
-print("\n2. 检查Python包...")
+# Check required Python packages
+print("\n2. Checking Python packages...")
 required_packages = ['numpy', 'pandas', 'tensorflow', 'flask']
 for package in required_packages:
     try:
         __import__(package)
-        print(f"   ✅ {package}")
+        print(f"   {package} - Installed")
     except ImportError:
-        print(f"   ❌ {package} 未安装")
+        print(f"   {package} - Not installed")
 
-print("\n🎉 验证完成！运行 `python main.py` 开始训练模型。")
+print("\nVerification completed! Run `python main.py` to start model training.")
